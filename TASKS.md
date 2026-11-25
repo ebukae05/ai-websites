@@ -19,4 +19,5 @@
 - [ ] Implement leads.py
 - [ ] Build template.html, styles.css, chat.js
 - [ ] Implement build.py
+- [ ] [CHECK] Human opens the demo page and tries the chat bot
 - [ ] Write evals for riverside-plumbing
