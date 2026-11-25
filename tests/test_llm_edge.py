@@ -181,11 +181,6 @@ def test_timeout_is_configured_on_request(use_server: Callable[[Handler], Server
     assert server.requests[0].headers["x-stainless-read-timeout"] == str(llm.TIMEOUT_SECONDS)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG: a 200 response that is not JSON (e.g. an HTML proxy page) escapes as "
-    "AttributeError instead of LLMError, breaking the 'one exception type' contract",
-)
 def test_non_json_success_body_is_llm_error(use_server: Callable[[Handler], Server]) -> None:
     def handler(request: httpx2.Request) -> httpx2.Response:
         return httpx2.Response(
@@ -260,11 +255,6 @@ def test_extra_message_keys_not_forwarded(use_server: Callable[[Handler], Server
 
 
 @pytest.mark.parametrize("messages", [["hello"], [None], [42]])
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG: a non-dict item in messages raises AttributeError, not LLMError, "
-    "despite the module promising one exception type for any failure",
-)
 def test_non_dict_message_is_llm_error(
     use_server: Callable[[Handler], Server], messages: Any
 ) -> None:

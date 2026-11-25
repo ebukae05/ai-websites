@@ -197,11 +197,6 @@ def test_error_messages_name_the_file(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize("email", ["@", "owner@", "@example.com", "owner@@example.com"])
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG: email check is only `'@' in email`, so clearly invalid addresses load "
-    "and new leads would be sent nowhere",
-)
 def test_invalid_email_rejected(tmp_path: Path, email: str) -> None:
     with pytest.raises(ConfigError, match="'email'"):
         load_data(tmp_path, client_data(email=email))

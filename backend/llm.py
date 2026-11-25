@@ -39,6 +39,8 @@ def _model() -> str:
 def _to_message_params(messages: list[dict[str, str]]) -> list[MessageParam]:
     params: list[MessageParam] = []
     for i, message in enumerate(messages):
+        if not isinstance(message, dict):
+            raise LLMError(f"Message {i + 1} must be a mapping with role and content.")
         role = message.get("role")
         content = message.get("content")
         if role not in ("user", "assistant") or not isinstance(content, str):
@@ -65,10 +67,18 @@ def reply(system: str, messages: list[dict[str, str]]) -> str:
     except anthropic.AnthropicError as exc:
         raise LLMError(f"AI model request failed: {type(exc).__name__}") from exc
     except TypeError as exc:
-        # The SDK raises TypeError when no API key can be found.
-        raise LLMError("AI model request failed: missing or invalid credentials") from exc
+        # The SDK raises TypeError("Could not resolve authentication method...") when no
+        # API key can be found; any other TypeError gets a generic label.
+        if "authentication" in str(exc).lower():
+            raise LLMError("AI model request failed: missing credentials") from exc
+        raise LLMError("AI model request failed: TypeError") from exc
 
-    text = "".join(block.text for block in response.content if block.type == "text").strip()
+    try:
+        text = "".join(block.text for block in response.content if block.type == "text")
+    except (AttributeError, TypeError) as exc:
+        # e.g. a 200 response whose body was not JSON, so the SDK returned raw text.
+        raise LLMError("AI model returned a response in an unexpected format.") from exc
+    text = text.strip()
     if not text:
         raise LLMError("AI model returned an empty reply.")
     return text

@@ -7,6 +7,7 @@ single `ConfigError` whose message says which file and which field is the proble
 from __future__ import annotations
 
 import re
+import unicodedata
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -81,11 +82,11 @@ def load_config(
     data = _read_yaml_mapping(path)
     where = f"{path}"
 
-    name = _required_str(data, "name", where)
+    name = _required_str(data, "name", where, single_line=True)
     industry = _required_str(data, "industry", where)
-    phone = _required_str(data, "phone", where)
-    email = _required_str(data, "email", where)
-    if "@" not in email:
+    phone = _required_str(data, "phone", where, single_line=True)
+    email = _required_str(data, "email", where, single_line=True)
+    if not _looks_like_email(email):
         raise ConfigError(f"{where}: field 'email' must be an email address, got {email!r}.")
     hours = _parse_hours(data, where)
     services = _parse_services(data, where)
@@ -175,7 +176,21 @@ def _read_yaml_mapping(path: Path) -> dict[str, Any]:
     return data
 
 
-def _required_str(data: Mapping[str, Any], field: str, where: str) -> str:
+def _has_line_break_or_control(text: str) -> bool:
+    return any(unicodedata.category(ch) in ("Cc", "Zl", "Zp") for ch in text)
+
+
+def _looks_like_email(email: str) -> bool:
+    """One '@', a non-empty local part, and a domain with a dot that is not at either end."""
+    if email.count("@") != 1 or any(ch.isspace() for ch in email):
+        return False
+    local, domain = email.split("@")
+    return bool(local) and "." in domain and not domain.startswith(".") and not domain.endswith(".")
+
+
+def _required_str(
+    data: Mapping[str, Any], field: str, where: str, *, single_line: bool = False
+) -> str:
     if field not in data or data[field] is None:
         raise ConfigError(f"{where}: required field '{field}' is missing.")
     value = data[field]
@@ -183,13 +198,27 @@ def _required_str(data: Mapping[str, Any], field: str, where: str) -> str:
         raise ConfigError(f"{where}: field '{field}' must be a string, got {type(value).__name__}.")
     if not value.strip():
         raise ConfigError(f"{where}: required field '{field}' is blank.")
-    return value.strip()
+    value = value.strip()
+    if single_line and _has_line_break_or_control(value):
+        raise ConfigError(
+            f"{where}: field '{field}' must be a single line "
+            "(no line breaks or control characters)."
+        )
+    return value
 
 
-def _list_item_str(item: object, field: str, index: int, where: str) -> str:
+def _list_item_str(
+    item: object, field: str, index: int, where: str, *, single_line: bool = False
+) -> str:
     if not isinstance(item, str) or not item.strip():
         raise ConfigError(f"{where}: '{field}' item {index + 1} must be a non-blank string.")
-    return item.strip()
+    value = item.strip()
+    if single_line and _has_line_break_or_control(value):
+        raise ConfigError(
+            f"{where}: '{field}' item {index + 1} must be a single line "
+            "(no line breaks or control characters)."
+        )
+    return value
 
 
 def _parse_hours(data: Mapping[str, Any], where: str) -> Mapping[str, str]:
@@ -211,6 +240,11 @@ def _parse_hours(data: Mapping[str, Any], where: str) -> Mapping[str, str]:
                 f"{where}: 'hours.{day}' must be a non-blank string like \"9:00-17:00\" "
                 'or "closed".'
             )
+        if _has_line_break_or_control(value.strip()):
+            raise ConfigError(
+                f"{where}: 'hours.{day}' must be a single line "
+                "(no line breaks or control characters)."
+            )
         hours[day] = value.strip()
     ordered = {day: hours[day] for day in DAYS if day in hours}
     return MappingProxyType(ordered)
@@ -224,7 +258,9 @@ def _parse_services(data: Mapping[str, Any], where: str) -> tuple[str, ...]:
         raise ConfigError(f"{where}: field 'services' must be a list of strings.")
     if not raw:
         raise ConfigError(f"{where}: required field 'services' is blank.")
-    return tuple(_list_item_str(item, "services", i, where) for i, item in enumerate(raw))
+    return tuple(
+        _list_item_str(item, "services", i, where, single_line=True) for i, item in enumerate(raw)
+    )
 
 
 def _parse_faqs(raw: object, field: str, where: str, *, required: bool) -> tuple[FAQ, ...]:

@@ -34,32 +34,46 @@ BASE_RULES = (
 )
 
 
+def _one_line(text: str) -> str:
+    """Collapse all whitespace (including line breaks) so text cannot start a new line."""
+    return " ".join(text.split())
+
+
+def _fact(text: str) -> str:
+    """Neutralise angle brackets so fact text cannot open or close the facts block."""
+    return text.replace("<", "&lt;").replace(">", "&gt;")
+
+
 def build_system_prompt(config: ClientConfig) -> str:
     """Return the system prompt for the chat bot of the given client."""
     pack = config.pack
+    name = _one_line(config.name)
+    phone = _one_line(config.phone)
     lines: list[str] = [
         pack.bot_role,
-        f"You are chatting with visitors on the website of {config.name}.",
+        f"You are chatting with visitors on the website of {name}.",
         "",
         "Rules:",
     ]
-    rules = [rule.format(name=config.name, phone=config.phone) for rule in BASE_RULES]
+    rules = [rule.format(name=name, phone=phone) for rule in BASE_RULES]
     rules.extend(pack.prompt_rules)
     lines.extend(f"- {rule}" for rule in rules)
 
-    lines += ["", "<business_facts>", f"Business name: {config.name}"]
-    lines.append(f"Phone: {config.phone}")
+    lines += ["", "<business_facts>", f"Business name: {_fact(name)}"]
+    lines.append(f"Phone: {_fact(phone)}")
     lines.append("Opening hours:")
-    lines.extend(f"- {DAY_NAMES.get(day, day)}: {hours}" for day, hours in config.hours.items())
+    lines.extend(
+        f"- {DAY_NAMES.get(day, day)}: {_fact(hours)}" for day, hours in config.hours.items()
+    )
     missing = [DAY_NAMES[day] for day in DAY_NAMES if day not in config.hours]
     if missing:
         lines.append(f"- Hours not listed for: {', '.join(missing)}")
     lines.append("Services:")
-    lines.extend(f"- {service}" for service in config.services)
+    lines.extend(f"- {_fact(service)}" for service in config.services)
     if config.faqs:
         lines.append("Frequently asked questions:")
         for faq in config.faqs:
-            lines.append(f"Q: {faq.question}")
-            lines.append(f"A: {faq.answer}")
+            lines.append(f"Q: {_fact(faq.question)}")
+            lines.append(f"A: {_fact(faq.answer)}")
     lines.append("</business_facts>")
     return "\n".join(lines)
