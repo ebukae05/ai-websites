@@ -18,6 +18,6 @@
 - [x] Implement /chat, /lead, /health in main.py
 - [x] Implement leads.py
 - [x] Build template.html, styles.css, chat.js
-- [ ] Implement build.py
+- [x] Implement build.py
 - [ ] [CHECK] Human opens the demo page and tries the chat bot
 - [ ] Write evals for riverside-plumbing

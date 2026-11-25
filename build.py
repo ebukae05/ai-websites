@@ -1,1 +1,144 @@
-"""Combines site/template.html + clients/<name>/config.yaml -> dist/<name>/ (a finished site)."""
+"""Combines site/template.html + clients/<name>/config.yaml -> dist/<name>/ (a finished site).
+
+Usage:  python build.py <slug> [--api URL] [--out DIR]
+
+--api defaults to env API_URL, else http://localhost:8000. --out defaults to dist.
+"""
+
+from __future__ import annotations
+
+import argparse
+import html
+import os
+import re
+import shutil
+import sys
+from collections.abc import Sequence
+from datetime import date
+from pathlib import Path
+
+from backend.config_loader import DAYS, ClientConfig, ConfigError, load_config
+from backend.prompt import DAY_NAMES
+
+ROOT = Path(__file__).resolve().parent
+SITE_DIR = ROOT / "site"
+DEFAULT_API_URL = "http://localhost:8000"
+DEFAULT_OUT_DIR = Path("dist")
+STATIC_FILES = ("styles.css", "chat.js")
+TOKEN_RE = re.compile(r"\{\{\s*([a-z_]+)\s*\}\}")
+
+
+class BuildError(Exception):
+    """The site could not be built (bad template, bad option, unfilled token)."""
+
+
+def esc(value: str) -> str:
+    """HTML-escape text for use in element content and quoted attributes."""
+    return html.escape(value, quote=True)
+
+
+def phone_href(phone: str) -> str:
+    """Digits (and a leading +) only, for a tel: link."""
+    digits = re.sub(r"[^\d]", "", phone)
+    return ("+" + digits) if phone.strip().startswith("+") else digits
+
+
+def render_services(config: ClientConfig) -> str:
+    return "\n".join(f"          <li>{esc(s)}</li>" for s in config.services)
+
+
+def render_hours(config: ClientConfig) -> str:
+    rows = []
+    for day in DAYS:
+        hours = config.hours.get(day, "Not listed")
+        rows.append(
+            f'            <tr><th scope="row">{esc(DAY_NAMES[day])}</th><td>{esc(hours)}</td></tr>'
+        )
+    return "\n".join(rows)
+
+
+def render_faqs(config: ClientConfig) -> str:
+    return "\n".join(
+        f"          <details><summary>{esc(f.question)}</summary><p>{esc(f.answer)}</p></details>"
+        for f in config.faqs
+    )
+
+
+def check_api_url(api_url: str) -> str:
+    url = api_url.strip().rstrip("/")
+    if not re.fullmatch(r"https?://[^\s\"'<>]+", url):
+        raise BuildError(f"--api must be an http:// or https:// URL, got {api_url!r}.")
+    return url
+
+
+def render(
+    config: ClientConfig,
+    api_url: str = DEFAULT_API_URL,
+    template: str | None = None,
+    year: int | None = None,
+) -> str:
+    """Fill the template with escaped values from `config`. Raises BuildError on bad input."""
+    if template is None:
+        template = (SITE_DIR / "template.html").read_text(encoding="utf-8")
+    site = config.pack.site
+    values = {
+        "slug": esc(config.slug),
+        "api_url": esc(check_api_url(api_url)),
+        "name": esc(config.name),
+        "tagline": esc(site.tagline.replace("{name}", config.name)),
+        "phone": esc(config.phone),
+        "phone_href": esc(phone_href(config.phone)),
+        "cta": esc(site.cta),
+        "services_heading": esc(site.services_heading),
+        "services_list": render_services(config),
+        "hours_rows": render_hours(config),
+        "faq_items": render_faqs(config),
+        "faq_hidden": "" if config.faqs else "hidden",
+        "year": str(year if year is not None else date.today().year),
+    }
+    # Check the template, not the output: a value may legitimately contain "{{...}}".
+    unknown = sorted({m.group(1) for m in TOKEN_RE.finditer(template)} - set(values))
+    if unknown:
+        raise BuildError(f"Template has unfilled tokens: {', '.join(unknown)}")
+    return TOKEN_RE.sub(lambda m: values[m.group(1)], template)
+
+
+def build(
+    slug: str,
+    api_url: str | None = None,
+    out_dir: Path = DEFAULT_OUT_DIR,
+    clients_dir: Path | None = None,
+    industries_dir: Path | None = None,
+    site_dir: Path = SITE_DIR,
+) -> Path:
+    """Build `<out_dir>/<slug>/` (index.html, styles.css, chat.js) and return that folder."""
+    config = load_config(slug, clients_dir=clients_dir, industries_dir=industries_dir)
+    api = api_url or os.environ.get("API_URL", "").strip() or DEFAULT_API_URL
+    page = render(config, api, template=(site_dir / "template.html").read_text(encoding="utf-8"))
+    target = out_dir / config.slug  # slug is validated by load_config: no path tricks
+    if target.exists():
+        shutil.rmtree(target)
+    target.mkdir(parents=True)
+    (target / "index.html").write_text(page, encoding="utf-8", newline="\n")
+    for name in STATIC_FILES:
+        shutil.copyfile(site_dir / name, target / name)
+    return target
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Build a client's one-page website.")
+    parser.add_argument("slug", help="client folder name under clients/")
+    parser.add_argument("--api", default=None, help=f"backend URL (default {DEFAULT_API_URL})")
+    parser.add_argument("--out", default=str(DEFAULT_OUT_DIR), help="output folder")
+    args = parser.parse_args(argv)
+    try:
+        target = build(args.slug, api_url=args.api, out_dir=Path(args.out))
+    except (ConfigError, BuildError, OSError) as exc:
+        print(f"Build failed: {exc}", file=sys.stderr)
+        return 1
+    print(f"Built {target / 'index.html'}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
