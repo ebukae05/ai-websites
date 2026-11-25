@@ -13,7 +13,7 @@
 ## Phase 1: Build
 
 - [x] Fill in riverside-plumbing config.yaml
-- [ ] Implement config_loader.py
+- [x] Implement config_loader.py
 - [ ] Implement prompt.py and llm.py
 - [ ] Implement /chat, /lead, /health in main.py
 - [ ] Implement leads.py
