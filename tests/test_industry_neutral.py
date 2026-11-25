@@ -36,7 +36,9 @@ def neutral_files() -> list[Path]:
 
 def test_scan_covers_expected_files() -> None:
     names = {p.relative_to(ROOT).as_posix() for p in neutral_files()}
-    assert {"backend/prompt.py", "backend/llm.py", "build.py", "site/template.html"} <= names
+    expected = {"backend/prompt.py", "backend/llm.py", "backend/main.py", "backend/leads.py"}
+    expected |= {"build.py", "site/template.html", "site/styles.css", "site/chat.js"}
+    assert expected <= names
     assert not any(n.startswith(("clients/", "tests/")) or n.endswith(".yaml") for n in names)
 
 

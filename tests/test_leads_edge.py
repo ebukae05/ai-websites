@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import itertools
 import json
 import logging
 import smtplib
+import ssl
 import threading
 from email.message import EmailMessage
 from pathlib import Path
@@ -91,3 +93,16 @@ def test_notify_owner_never_raises_on_odd_email(
     lead = Lead(client="acme-co", name="Jane", phone="555-0199", email=email)
     assert notify_owner(lead, OWNER) in (True, False)
     assert SECRET not in caplog.text
+
+
+def test_fix_ea3a095_fuzz_short_addresses_never_raise(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Confirms bug 6 fix: every 1-3 char mix of address punctuation is handled."""
+    monkeypatch.setattr(ssl, "create_default_context", lambda: None)  # speed only
+    chars = '"\\()<>@,;:[]. a'
+    candidates = ["".join(c) for n in (1, 2, 3) for c in itertools.product(chars, repeat=n)]
+    for email in candidates:
+        lead = Lead(client="acme-co", name="Jane", phone="1", email=email)
+        message = build_email(lead, OWNER, "s@x.example")
+        message.as_bytes()  # serialising must not raise either
+        assert notify_owner(lead, OWNER) is True, repr(email)
+    assert len(FakeSMTP.sent) == len(candidates)

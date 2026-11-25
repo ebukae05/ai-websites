@@ -186,3 +186,88 @@ No network calls; no eval set yet.
 ### Verdict
 
 **FAIL** — 1 bug (8 strict-xfail cases across 2 tests). Everything else in scope passes.
+
+Follow-up: commit ea3a095 fixed bug 6 (confirmed below).
+
+## Phase 1 — tasks 6-7
+
+Scope: `site/template.html`, `site/styles.css`, `site/chat.js` (753a214), `build.py`
+(7eaf7c9), and confirming fix ea3a095 for bug 6. Spec: DESIGN.md 1, 2, 3.2 (build writes
+`dist/<slug>/index.html`, `styles.css`, `chat.js`; the page passes slug and backend URL to
+`chat.js`); CLAUDE.md rules.
+
+New or extended test files (tests only; no application code changed):
+
+- `tests/test_build_edge.py` — `build.render` escaping (parsed back with `html.parser`),
+  content edge cases, `--api` validation, page references, `build()` on disk in tmp dirs,
+  and the CLI in a subprocess run from `cwd=tmp_path`
+- `tests/test_chat_js.py` — static checks on `chat.js` text, `node --check`, and behaviour
+  under node with a tiny fake DOM (setting `innerHTML` throws) and a fake `fetch` (no
+  network); node tests skip if node is not installed
+- `tests/test_leads_edge.py` — fuzz test for the bug 6 fix
+- `tests/test_industry_neutral.py` — the coverage check now also requires `site/styles.css`,
+  `site/chat.js`, `backend/main.py` and `backend/leads.py`
+
+Run: `pytest` → **584 passed, 1 xfailed** (strict). ruff, ruff format and mypy strict are
+clean. `node --check site/chat.js` passes.
+
+### Results per criterion
+
+| Criterion | Result |
+|---|---|
+| Name, phone, tagline, CTA, heading, services, hours and FAQ text escaped in text and attributes: `"`, `'`, `<script>`, `</script>`, `&amp;`, backslashes and `$1` all come back unchanged from `data-*`, `<title>`, `<h1>`, etc. | PASS |
+| `{{...}}` inside values is not expanded (single pass over the template) | PASS |
+| `</script>` in a FAQ stays text; the page has exactly one `<script src="chat.js">` | PASS |
+| Unicode (accents, CJK, Arabic, emoji) written as UTF-8 with LF endings and `<meta charset="utf-8">` | PASS |
+| Empty FAQ list → FAQ section `hidden`, no `<details>` | PASS |
+| Missing hours days → listed as "Not listed"; all seven days shown | PASS |
+| Bad `--api` rejected: `javascript:`, `data:`, `vbscript:`, `file:`, `ftp:`, `//host`, embedded quote, `<`, space, tab, newline, empty, whitespace, no scheme | PASS |
+| Good `--api` trimmed, trailing `/` removed, `&` escaped; `API_URL` env is used and validated before anything is written | PASS |
+| Built page references only `styles.css`, `chat.js`, `#main` and `tel:` links (digits and `+` only); no absolute URL except the backend URL in `data-api` | PASS |
+| `styles.css` has no `@import`, external `url()` or http(s) references | PASS |
+| Traversal or odd slug → `ConfigError`, nothing written; CLI exits 1 with "Build failed:" and no traceback | PASS |
+| `--out` with missing parents is created; `--out` that is a file → exit 1 and the file is left alone | PASS |
+| Rebuild replaces old output (stale files removed) and leaves sibling client folders alone | PASS |
+| Rebuilding must not delete folders that are not previous builds | **FAIL** (bug 7) |
+| CLI works from another working directory; default `--out dist` is relative to that directory | PASS |
+| `chat.js`: no `innerHTML`/`outerHTML`/`insertAdjacentHTML`/`document.write`/`eval`/`new Function`/`DOMParser` | PASS |
+| `chat.js`: `MAX_HISTORY = 20` = `main.MAX_MESSAGES`; `MAX_CHARS` = `main.MAX_CONTENT_CHARS`; lead `maxlength` values match `LeadRequest` | PASS |
+| `chat.js` reads `data-client`, `data-api`, `data-phone`, `data-name` from `<body>` | PASS |
+| Under node: 30 turns → every `/chat` payload has 1-20 messages, last one is the new user message, only `role`/`content` keys | PASS |
+| Under node: blank input not sent; 5000-char input cut to 2000 | PASS |
+| Under node: an HTML/script reply is shown as plain text | PASS |
+| Under node: 503, 500 with no JSON, 404 and network failure show a message with the phone number; the failed question is not resent | PASS |
+| Under node: lead form sends only with a name and a phone or email (blank/whitespace rejected with "Please enter ...") | PASS |
+| Industry-neutral scan covers `site/*` (template, styles, chat.js) and `build.py`, and finds nothing | PASS |
+| Fix ea3a095 (bug 6): all 3,615 one- to three-character mixes of address punctuation go through `build_email` and `notify_owner` without raising | PASS |
+
+### Failures (strict xfail)
+
+7. **Rebuilding deletes whatever folder is at `<out>/<slug>`** —
+   `test_build_edge.py::test_build_into_clients_dir_does_not_delete_config`
+   - Input: `build("acme-co", out_dir=<clients dir>)`, i.e. `python build.py acme-co --out clients`.
+   - Actual: `build()` loads the config, then runs `shutil.rmtree(clients/acme-co)` and
+     writes the site there. The client's `config.yaml` is deleted, and the build reports
+     success. Confirmed by a manual run: the folder then contains only `chat.js`, `index.html`
+     and `styles.css`.
+   - Expected: refuse to build into a folder that is not a previous build (for example,
+     only remove a folder whose files are a subset of `index.html`, `styles.css`, `chat.js`),
+     or refuse `--out` values inside `clients/`, `backend/` or `site/`.
+   - Severity: medium (one typo loses client data that may not be committed yet).
+
+### Observations (not failing)
+
+- `phone_href` keeps every digit, so `555-0142 ext 12` becomes `tel:555014212` (wrong
+  number) and a phone with no digits gives an empty `tel:` link.
+- `--api` accepts a query or fragment (`https://x.example/?a=1#f`); `chat.js` then builds
+  `…#f/chat`, which does not reach `/chat`. The URL scheme check is case-sensitive
+  (`HTTPS://…` is rejected).
+- `chat.js` trims history from the front, so after 10 turns the history it sends can start
+  with an assistant message. The backend accepts this; check the model API does too.
+- The default `--out dist` is relative to the current directory, not the repo, so running
+  from elsewhere writes `dist/` there.
+
+### Verdict
+
+**FAIL** — 1 bug (bug 7, 1 strict-xfail test). Bug 6 is confirmed fixed. Everything else in
+scope passes.
