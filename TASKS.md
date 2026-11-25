@@ -7,7 +7,7 @@
 - [x] Folder skeleton matches README (backend/, site/, clients/, evals/, tests/)
 - [x] Dev tooling: ruff, mypy, pytest, pre-commit with gitleaks
 - [x] CI runs lint, type check, tests and secret scan on every PR
-- [ ] CLAUDE.md written
+- [x] CLAUDE.md written
 - [ ] DESIGN.md 3.1 client config includes `industry` (v1 pack: `home_services`)
 
 ## Phase 1: Build
