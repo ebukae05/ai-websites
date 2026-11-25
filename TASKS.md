@@ -6,7 +6,7 @@
 - [x] `.gitignore` covers `.env`, `dist/`, `.venv/`; `.env.example` committed
 - [x] Folder skeleton matches README (backend/, site/, clients/, evals/, tests/)
 - [x] Dev tooling: ruff, mypy, pytest, pre-commit with gitleaks
-- [ ] CI runs lint, type check, tests and secret scan on every PR
+- [x] CI runs lint, type check, tests and secret scan on every PR
 - [ ] CLAUDE.md written
 - [ ] DESIGN.md 3.1 client config includes `industry` (v1 pack: `home_services`)
 
