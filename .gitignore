@@ -231,3 +231,6 @@ __pycache__/
 # Project rules
 !.env.example
 .claude/settings.local.json
+
+# Saved leads (local data, never committed)
+data/

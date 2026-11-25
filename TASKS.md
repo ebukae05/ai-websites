@@ -16,7 +16,7 @@
 - [x] Implement config_loader.py
 - [x] Implement prompt.py and llm.py
 - [ ] Implement /chat, /lead, /health in main.py
-- [ ] Implement leads.py
+- [x] Implement leads.py
 - [ ] Build template.html, styles.css, chat.js
 - [ ] Implement build.py
 - [ ] [CHECK] Human opens the demo page and tries the chat bot

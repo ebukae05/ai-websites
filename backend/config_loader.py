@@ -65,13 +65,18 @@ class ClientConfig:
     pack: IndustryPack
 
 
+def is_valid_slug(slug: object) -> bool:
+    """True if `slug` is safe to use as a folder or file name (no paths, no odd characters)."""
+    return isinstance(slug, str) and _SLUG_RE.fullmatch(slug) is not None
+
+
 def load_config(
     slug: str,
     clients_dir: Path | None = None,
     industries_dir: Path | None = None,
 ) -> ClientConfig:
     """Load and validate `clients/<slug>/config.yaml` plus its industry pack."""
-    if not isinstance(slug, str) or not _SLUG_RE.fullmatch(slug):
+    if not is_valid_slug(slug):
         raise ConfigError(
             f"Invalid client slug {slug!r}: use lowercase letters, digits and single hyphens."
         )
