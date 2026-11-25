@@ -1,3 +1,9 @@
 # Test questions the bot must get right for this client.
-- question: ""
-  must_include: []
+# Run: python -m evals.run riverside-plumbing   (format documented at the top of evals/run.py)
+#
+# - question: How much is your call-out fee?
+#   must_include: ["$85"]
+#   must_not_include: []
+#   must_include_any: []
+#   note: price comes straight from the FAQ
+[]
