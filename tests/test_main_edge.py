@@ -532,12 +532,6 @@ def test_crlf_cannot_add_email_headers(
 
 
 @pytest.mark.parametrize("email", ['"', ',"', "():", ':;"'])
-@pytest.mark.xfail(
-    strict=True,
-    reason='BUG: an email like `"` or `:;"` makes build_email raise IndexError or '
-    "AttributeError (stdlib address parser); notify_owner only catches "
-    "SMTPException/OSError/ValueError, so /lead returns 500 even though the lead was saved",
-)
 def test_unparseable_visitor_email_still_201(smtp: type[FakeSMTP], env: Env, email: str) -> None:
     response = TestClient(main.app, raise_server_exceptions=False).post(
         "/lead", json=lead_body(email=email)

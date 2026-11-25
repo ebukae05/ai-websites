@@ -84,11 +84,6 @@ def test_build_email_header_injection(email: str) -> None:
 
 
 @pytest.mark.parametrize("email", ['"', ',"', "():", ':;"'])
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG: build_email raises IndexError/AttributeError for these addresses and "
-    "notify_owner lets it escape instead of logging and returning False",
-)
 def test_notify_owner_never_raises_on_odd_email(
     email: str, caplog: pytest.LogCaptureFixture
 ) -> None:

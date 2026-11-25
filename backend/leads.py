@@ -75,8 +75,10 @@ def build_email(lead: Lead, owner_email: str, sender: str) -> EmailMessage:
     if lead.email:
         try:
             message["Reply-To"] = lead.email
-        except ValueError:
-            pass  # not a usable header value; the address is still in the body
+        except Exception:  # the stdlib address parser can raise many exception types
+            # Not a usable address: leave Reply-To out; the address is still in the body.
+            if "Reply-To" in message:
+                del message["Reply-To"]
     body = [
         "Someone left their details on your website.",
         "",
@@ -110,7 +112,7 @@ def notify_owner(lead: Lead, owner_email: str) -> bool:
             if user:
                 smtp.login(user, password)
             smtp.send_message(message)
-    except (smtplib.SMTPException, OSError, ValueError) as exc:
+    except Exception as exc:  # a lead email must never break the request
         logger.warning("Lead email failed for client %s: %s", lead.client, type(exc).__name__)
         return False
     logger.info("Lead email sent for client %s", lead.client)
