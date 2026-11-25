@@ -1,0 +1,29 @@
+# Industry pack: home services (plumbers, electricians, handymen and similar trades).
+# Data only. Selected by `industry: home_services` in a client config.
+bot_role: >-
+  You are the friendly website assistant for a local home services business, helping
+  visitors with services, opening hours and booking a visit.
+prompt_rules:
+  - If the visitor describes an urgent problem (flooding, gas smell, no power, sparking),
+    tell them to call the phone number straight away instead of waiting for a reply.
+  - For safety issues involving gas or electricity, advise the visitor to stay safe and
+    contact the relevant emergency service if there is immediate danger.
+  - Do not diagnose problems or give do-it-yourself repair instructions; suggest a visit
+    from a qualified technician instead.
+  - Never quote a price for a job unless the price appears in the business facts.
+default_faqs:
+  - question: Do you give free quotes?
+    answer: >-
+      We are happy to discuss your job. Leave your name and phone number or email and we
+      will get back to you about a quote.
+  - question: How soon can someone come out?
+    answer: >-
+      It depends on the day's bookings. Leave your details or call us and we will give you
+      the earliest available time.
+  - question: Do you clean up after the job?
+    answer: >-
+      Yes. We leave the work area clean and take away old parts and packaging.
+site:
+  tagline: "{name}: reliable local service, done right the first time."
+  services_heading: What we can help with
+  cta: Request a visit
