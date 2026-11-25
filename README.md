@@ -31,6 +31,7 @@ dist/           the finished sites (generated, NOT committed)
 ```
 python -m venv .venv
 .venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
+pre-commit install
 copy .env.example .env   # then fill in the keys
 ```
