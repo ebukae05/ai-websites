@@ -170,7 +170,7 @@ conda-meta/
 .ropeproject
 
 # mkdocs/Zensical documentation
-/site
+# /site  (removed: mkdocs default; site/ is our frontend and must be committed)
 
 # mypy
 .mypy_cache/
@@ -227,3 +227,7 @@ dist/
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Project rules
+!.env.example
+.claude/settings.local.json

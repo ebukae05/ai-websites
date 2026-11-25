@@ -3,7 +3,7 @@
 ## Phase 0: Foundations
 
 - [x] Dev-team agents and `.claude/settings.json` in place
-- [ ] `.gitignore` covers `.env`, `dist/`, `.venv/`; `.env.example` committed
+- [x] `.gitignore` covers `.env`, `dist/`, `.venv/`; `.env.example` committed
 - [ ] Folder skeleton matches README (backend/, site/, clients/, evals/, tests/)
 - [ ] Dev tooling: ruff, mypy, pytest, pre-commit with gitleaks
 - [ ] CI runs lint, type check, tests and secret scan on every PR
