@@ -25,6 +25,8 @@ SITE_DIR = ROOT / "site"
 DEFAULT_API_URL = "http://localhost:8000"
 DEFAULT_OUT_DIR = Path("dist")
 STATIC_FILES = ("styles.css", "chat.js")
+BUILD_OUTPUTS = ("index.html", *STATIC_FILES)
+SOURCE_SUFFIXES = {".yaml", ".yml", ".py"}
 TOKEN_RE = re.compile(r"\{\{\s*([a-z_]+)\s*\}\}")
 
 
@@ -38,9 +40,10 @@ def esc(value: str) -> str:
 
 
 def phone_href(phone: str) -> str:
-    """Digits (and a leading +) only, for a tel: link."""
-    digits = re.sub(r"[^\d]", "", phone)
-    return ("+" + digits) if phone.strip().startswith("+") else digits
+    """The main number only (no extension), as digits with an optional leading +."""
+    main_number = re.split(r"ext|x|[,;]", phone, maxsplit=1, flags=re.IGNORECASE)[0]
+    digits = re.sub(r"\D", "", main_number)
+    return ("+" + digits) if main_number.strip().startswith("+") else digits
 
 
 def render_services(config: ClientConfig) -> str:
@@ -66,9 +69,13 @@ def render_faqs(config: ClientConfig) -> str:
 
 def check_api_url(api_url: str) -> str:
     url = api_url.strip().rstrip("/")
-    if not re.fullmatch(r"https?://[^\s\"'<>]+", url):
-        raise BuildError(f"--api must be an http:// or https:// URL, got {api_url!r}.")
-    return url
+    match = re.fullmatch(r"(https?)://([^\s\"'<>?#]+)", url, flags=re.IGNORECASE)
+    if not match:
+        raise BuildError(
+            f"--api must be an http:// or https:// URL without a query or #fragment, "
+            f"got {api_url!r}."
+        )
+    return f"{match.group(1).lower()}://{match.group(2)}"
 
 
 def render(
@@ -103,6 +110,27 @@ def render(
     return TOKEN_RE.sub(lambda m: values[m.group(1)], template)
 
 
+def _is_previous_build(folder: Path) -> bool:
+    """True if `folder` holds the files a build writes and no source files (.yaml, .py)."""
+    names = {p.name for p in folder.iterdir()}
+    if not set(BUILD_OUTPUTS) <= names:
+        return False
+    return not any(p.suffix in SOURCE_SUFFIXES for p in folder.rglob("*"))
+
+
+def _clear_previous_build(target: Path, site_dir: Path) -> None:
+    """Delete `target` only if it is an earlier build; refuse anything else."""
+    if not target.exists():
+        return
+    if not target.is_dir() or target.resolve() in {site_dir.resolve(), ROOT}:
+        raise BuildError(f"Refusing to overwrite {target}: it is not a previous build.")
+    if not any(target.iterdir()):
+        return  # empty folder: nothing to delete
+    if not _is_previous_build(target):
+        raise BuildError(f"Refusing to overwrite {target}: it is not a previous build.")
+    shutil.rmtree(target)
+
+
 def build(
     slug: str,
     api_url: str | None = None,
@@ -116,9 +144,8 @@ def build(
     api = api_url or os.environ.get("API_URL", "").strip() or DEFAULT_API_URL
     page = render(config, api, template=(site_dir / "template.html").read_text(encoding="utf-8"))
     target = out_dir / config.slug  # slug is validated by load_config: no path tricks
-    if target.exists():
-        shutil.rmtree(target)
-    target.mkdir(parents=True)
+    _clear_previous_build(target, site_dir)
+    target.mkdir(parents=True, exist_ok=True)
     (target / "index.html").write_text(page, encoding="utf-8", newline="\n")
     for name in STATIC_FILES:
         shutil.copyfile(site_dir / name, target / name)

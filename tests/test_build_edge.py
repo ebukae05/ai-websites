@@ -248,7 +248,7 @@ def test_bad_api_rejected(api: str) -> None:
         ("  https://api.example.com/  ", "https://api.example.com"),
         ("http://localhost:8000///", "http://localhost:8000"),
         ("https://api.example.com/v1", "https://api.example.com/v1"),
-        ("https://api.example.com/?a=1&b=2", "https://api.example.com/?a=1&b=2"),
+        ("https://api.example.com/a=1&b=2", "https://api.example.com/a=1&b=2"),
     ],
 )
 def test_good_api_normalised_and_escaped(api: str, expected: str) -> None:
@@ -345,11 +345,6 @@ def test_rebuild_leaves_sibling_folders_alone(dirs: tuple[Path, Path], tmp_path:
     assert (out / "other-client" / "index.html").read_text(encoding="utf-8") == "keep"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG: build() deletes <out>/<slug> with shutil.rmtree without checking it is a "
-    "previous build; `--out clients` deletes the client's own config.yaml",
-)
 def test_build_into_clients_dir_does_not_delete_config(dirs: tuple[Path, Path]) -> None:
     clients, _ = dirs
     config_file = clients / "acme-co" / "config.yaml"

@@ -170,6 +170,39 @@ def test_phone_href_keeps_plus() -> None:
     assert build.phone_href("555-0100") == "5550100"
 
 
+@pytest.mark.parametrize(
+    ("phone", "href"),
+    [
+        ("555-0100 ext 12", "5550100"),
+        ("555-0100 Ext. 12", "5550100"),
+        ("+44 20 7946 0000 x204", "+442079460000"),
+        ("555-0100, 555-0199", "5550100"),
+        ("555-0100; after hours 555-0199", "5550100"),
+    ],
+)
+def test_phone_href_uses_main_number_only(phone: str, href: str) -> None:
+    assert build.phone_href(phone) == href
+
+
+@pytest.mark.parametrize(
+    ("url", "expected"),
+    [
+        ("HTTPS://api.acme.example/", "https://api.acme.example"),
+        ("Http://localhost:8000", "http://localhost:8000"),
+    ],
+)
+def test_api_url_scheme_case_insensitive(url: str, expected: str) -> None:
+    assert build.check_api_url(url) == expected
+
+
+@pytest.mark.parametrize(
+    "url", ["http://localhost:8000/?x=1", "http://localhost:8000#frag", "https://a.example/p?"]
+)
+def test_api_url_rejects_query_and_fragment(url: str) -> None:
+    with pytest.raises(build.BuildError, match="query"):
+        build.check_api_url(url)
+
+
 @pytest.mark.parametrize("url", ["javascript:alert(1)", "ftp://x", "", 'http://a" b'])
 def test_bad_api_url_rejected(url: str) -> None:
     with pytest.raises(build.BuildError, match="--api"):
@@ -194,13 +227,48 @@ def test_build_writes_site(tmp_path: Path) -> None:
     assert (target / "chat.js").read_bytes() == (ROOT / "site" / "chat.js").read_bytes()
 
 
-def test_build_recreates_folder(tmp_path: Path) -> None:
+def test_build_recreates_previous_build(tmp_path: Path) -> None:
+    clients, industries = write_dirs(tmp_path)
+    out = tmp_path / "dist"
+    target = build.build("acme-co", None, out, clients_dir=clients, industries_dir=industries)
+    (target / "stale.txt").write_text("old", encoding="utf-8")
+    build.build("acme-co", None, out, clients_dir=clients, industries_dir=industries)
+    assert not (target / "stale.txt").exists()
+
+
+def test_build_into_empty_existing_folder(tmp_path: Path) -> None:
     clients, industries = write_dirs(tmp_path)
     out = tmp_path / "dist"
     (out / "acme-co").mkdir(parents=True)
-    (out / "acme-co" / "stale.txt").write_text("old", encoding="utf-8")
-    build.build("acme-co", None, out, clients_dir=clients, industries_dir=industries)
-    assert not (out / "acme-co" / "stale.txt").exists()
+    target = build.build("acme-co", None, out, clients_dir=clients, industries_dir=industries)
+    assert (target / "index.html").is_file()
+
+
+@pytest.mark.parametrize(
+    "existing",
+    [
+        {"notes.txt": "keep me"},
+        {"index.html": "x", "styles.css": "x", "chat.js": "x", "config.yaml": "name: x"},
+        {"index.html": "x", "styles.css": "x", "chat.js": "x", "sub/tool.py": "x = 1"},
+    ],
+)
+def test_build_refuses_folder_that_is_not_a_build(tmp_path: Path, existing: dict[str, str]) -> None:
+    clients, industries = write_dirs(tmp_path)
+    target = tmp_path / "dist" / "acme-co"
+    for name, text in existing.items():
+        (target / name).parent.mkdir(parents=True, exist_ok=True)
+        (target / name).write_text(text, encoding="utf-8")
+    with pytest.raises(build.BuildError, match="not a previous build"):
+        build.build("acme-co", None, tmp_path / "dist", clients, industries)
+    for name, text in existing.items():
+        assert (target / name).read_text(encoding="utf-8") == text
+
+
+def test_main_into_clients_dir_refuses(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    clients, industries = write_dirs(tmp_path)
+    with pytest.raises(build.BuildError):
+        build.build("acme-co", None, clients, clients, industries)
+    assert (clients / "acme-co" / "config.yaml").is_file()
 
 
 def test_api_url_from_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

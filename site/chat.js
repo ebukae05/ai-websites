@@ -232,6 +232,10 @@
     while (history.length > MAX_HISTORY) {
       history.shift();
     }
+    // The history must start with a user message.
+    while (history.length && history[0].role !== "user") {
+      history.shift();
+    }
     setBusy(true);
     var typing = showTyping();
     postJson("/chat", { client: settings.client, messages: history })
@@ -241,6 +245,10 @@
           addMessage("bot", result.data.reply);
           history.push({ role: "assistant", content: result.data.reply.slice(0, MAX_CHARS) });
           while (history.length > MAX_HISTORY) {
+            history.shift();
+          }
+          // The history must start with a user message.
+          while (history.length && history[0].role !== "user") {
             history.shift();
           }
         } else {
