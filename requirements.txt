@@ -3,5 +3,3 @@ uvicorn
 anthropic
 pyyaml
 python-dotenv
-pytest
-httpx

@@ -1,5 +1,17 @@
 # Tasks
 
+## Phase 0: Foundations
+
+- [x] Dev-team agents and `.claude/settings.json` in place
+- [x] `.gitignore` covers `.env`, `dist/`, `.venv/`; `.env.example` committed
+- [x] Folder skeleton matches README (backend/, site/, clients/, evals/, tests/)
+- [x] Dev tooling: ruff, mypy, pytest, pre-commit with gitleaks
+- [x] CI runs lint, type check, tests and secret scan on every PR
+- [x] CLAUDE.md written
+- [x] DESIGN.md 3.1 client config includes `industry` (v1 pack: `home_services`)
+
+## Phase 1: Build
+
 - [ ] Fill in riverside-plumbing config.yaml
 - [ ] Implement config_loader.py
 - [ ] Implement prompt.py and llm.py

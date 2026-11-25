@@ -1,5 +1,6 @@
 # Data, not code: everything the site and bot need to know about this business.
 name: Riverside Plumbing
+industry: home_services
 phone: ""
 email: ""
 hours: {}
