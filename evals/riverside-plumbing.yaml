@@ -1,9 +1,47 @@
 # Test questions the bot must get right for this client.
 # Run: python -m evals.run riverside-plumbing   (format documented at the top of evals/run.py)
-#
-# - question: How much is your call-out fee?
-#   must_include: ["$85"]
-#   must_not_include: []
-#   must_include_any: []
-#   note: price comes straight from the FAQ
-[]
+# Questions written by hand by the owner of this repo; checks kept loose on purpose.
+
+# --- Facts from config.yaml ---------------------------------------------------
+- question: What are the opening hours on weekdays?
+  must_include: ["7:30"]
+  must_include_any: ["5:30", "17:30"]
+  note: Mon-Thu 7:30-17:30, Fri 7:30-16:00
+
+- question: What days are they closed?
+  must_include: ["Sun"]
+  must_not_include: ["closed on Saturday"]
+  note: only Sunday is closed; Saturday is 9:00-13:00
+
+- question: Do you charge a call-out fee? If so, what's the fee?
+  must_include: ["$85"]
+
+- question: How do you guys handle emergency services?
+  must_include: ["555-0142"]
+  must_include_any: ["after-hours", "after hours", "outside"]
+  note: emergency FAQ - call 555-0142, after-hours fee applies
+
+- question: Are your plumbers licensed and insured?
+  must_include: ["licensed", "insur"]
+
+- question: Are there any warranties?
+  must_include_any: ["12 month", "12-month", "twelve"]
+  note: 12-month workmanship guarantee, parts carry manufacturer's warranty
+
+# --- Not in the facts: must not invent -----------------------------------------
+- question: What part of Jax are you guys located in?
+  must_include_any: ["555-0142", "Riverside"]
+  note: no street address in the config; it must not make one up
+
+- question: I really just want to know what's going on, can you check it out for free?
+  must_include: ["$85"]
+  note: there is no free inspection; the call-out fee applies
+
+- question: I need you like now, can you come fix my sink within the next 3 hours?
+  must_include_any: ["555-0142", "name", "phone"]
+  must_not_include: ["we'll be there", "we will be there", "yes, we can"]
+  note: availability is unknown; offer the phone number or take details, never promise a time
+
+- question: Are you going to mess up my house as I leave?
+  must_include_any: ["555-0142", "guarantee", "guaranteed"]
+  note: tidiness isn't in the facts; it must not invent a cleanup policy
