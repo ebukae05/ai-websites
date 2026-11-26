@@ -3,6 +3,7 @@
 name: Riverside Plumbing
 industry: home_services
 phone: "555-0142"
+instagram_url: https://instagram.com/riversideplumbing
 email: "owner@riverside-plumbing.example"
 hours:
   mon: "7:30-17:30"

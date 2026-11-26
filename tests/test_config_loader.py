@@ -222,3 +222,47 @@ def test_loads_real_sample_client() -> None:
     assert set(config.hours) == {"mon", "tue", "wed", "thu", "fri", "sat", "sun"}
     assert 5 <= len(config.services) <= 7
     assert len(config.faqs) >= 4
+
+
+def test_instagram_url_optional(tmp_path: Path) -> None:
+    assert load(tmp_path, client_data()).instagram_url is None
+
+
+@pytest.mark.parametrize("value", [None, "", "   "])
+def test_instagram_url_blank_means_none(tmp_path: Path, value: Any) -> None:
+    assert load(tmp_path, client_data(instagram_url=value)).instagram_url is None
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("https://instagram.com/acmeco", "https://instagram.com/acmeco"),
+        ("  https://www.instagram.com/acme.co/  ", "https://www.instagram.com/acme.co/"),
+        ("HTTPS://instagram.com/acmeco", "HTTPS://instagram.com/acmeco"),
+    ],
+)
+def test_instagram_url_valid(tmp_path: Path, value: str, expected: str) -> None:
+    assert load(tmp_path, client_data(instagram_url=value)).instagram_url == expected
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "http://instagram.com/acmeco",
+        "instagram.com/acmeco",
+        "javascript:alert(1)",
+        "https://",
+        "https://instagram.com/acme co",
+        "https://instagram.com/acme\nco",
+        "https://instagram.com/acme\x00",
+    ],
+)
+def test_instagram_url_invalid(tmp_path: Path, value: str) -> None:
+    with pytest.raises(ConfigError, match="instagram_url"):
+        load(tmp_path, client_data(instagram_url=value))
+
+
+@pytest.mark.parametrize("value", [123, ["https://instagram.com/a"], {"url": "x"}])
+def test_instagram_url_wrong_type(tmp_path: Path, value: Any) -> None:
+    with pytest.raises(ConfigError, match="'instagram_url' must be a string"):
+        load(tmp_path, client_data(instagram_url=value))

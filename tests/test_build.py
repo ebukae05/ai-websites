@@ -324,3 +324,29 @@ def test_real_sample_builds(tmp_path: Path, capsys: pytest.CaptureFixture[str]) 
     for faq in config.faqs:
         assert build.esc(faq.question) in page
     assert (tmp_path / "riverside-plumbing" / "styles.css").is_file()
+
+
+def test_footer_has_no_instagram_link_by_default() -> None:
+    page = build.render(make_config(), year=2026)
+    assert "Instagram" not in page
+    assert "instagram.com" not in page
+
+
+def test_footer_shows_instagram_link() -> None:
+    url = "https://instagram.com/acmeco"
+    page = build.render(make_config(instagram_url=url), year=2026)
+    footer = page[page.index('<footer class="footer">') : page.index("</footer>")]
+    assert f'<a href="{url}" target="_blank" rel="noopener noreferrer">Instagram</a>' in footer
+
+
+def test_instagram_link_is_escaped() -> None:
+    page = build.render(make_config(instagram_url='https://x.example/"><script>'), year=2026)
+    assert "<script>" not in page.split("</footer>")[0].split('<footer class="footer">')[1]
+    assert "&quot;&gt;&lt;script&gt;" in page
+
+
+def test_real_sample_footer_links_instagram() -> None:
+    config = load_config("riverside-plumbing")
+    assert config.instagram_url is not None
+    page = build.render(config, year=2026)
+    assert f'href="{config.instagram_url}"' in page

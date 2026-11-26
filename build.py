@@ -67,6 +67,16 @@ def render_faqs(config: ClientConfig) -> str:
     )
 
 
+def render_instagram_link(config: ClientConfig) -> str:
+    """Footer link to the business's Instagram page, or nothing if it has none."""
+    if not config.instagram_url:
+        return ""
+    return (
+        f' &middot; <a href="{esc(config.instagram_url)}" target="_blank" '
+        'rel="noopener noreferrer">Instagram</a>'
+    )
+
+
 def check_api_url(api_url: str) -> str:
     url = api_url.strip().rstrip("/")
     match = re.fullmatch(r"(https?)://([^\s\"'<>?#]+)", url, flags=re.IGNORECASE)
@@ -101,6 +111,7 @@ def render(
         "hours_rows": render_hours(config),
         "faq_items": render_faqs(config),
         "faq_hidden": "" if config.faqs else "hidden",
+        "instagram_link": render_instagram_link(config),
         "year": str(year if year is not None else date.today().year),
     }
     # Check the template, not the output: a value may legitimately contain "{{...}}".

@@ -63,6 +63,7 @@ class ClientConfig:
     services: tuple[str, ...]
     faqs: tuple[FAQ, ...]  # client FAQs first, then pack defaults not already covered
     pack: IndustryPack
+    instagram_url: str | None = None
 
 
 def is_valid_slug(slug: object) -> bool:
@@ -96,6 +97,7 @@ def load_config(
     hours = _parse_hours(data, where)
     services = _parse_services(data, where)
     client_faqs = _parse_faqs(data.get("faqs"), "faqs", where, required=False)
+    instagram_url = _optional_https_url(data, "instagram_url", where)
 
     pack = load_industry_pack(industry, industries_dir)
     return ClientConfig(
@@ -108,6 +110,7 @@ def load_config(
         services=services,
         faqs=merge_faqs(client_faqs, pack.default_faqs),
         pack=pack,
+        instagram_url=instagram_url,
     )
 
 
@@ -208,6 +211,29 @@ def _required_str(
         raise ConfigError(
             f"{where}: field '{field}' must be a single line "
             "(no line breaks or control characters)."
+        )
+    return value
+
+
+def _optional_https_url(data: Mapping[str, Any], field: str, where: str) -> str | None:
+    """Return the trimmed URL, or None if the field is absent or blank. Must start with https://."""
+    value = data.get(field)
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise ConfigError(f"{where}: field '{field}' must be a string, got {type(value).__name__}.")
+    value = value.strip()
+    if not value:
+        return None
+    if (
+        not value.lower().startswith("https://")
+        or len(value) == len("https://")
+        or any(ch.isspace() for ch in value)
+        or _has_line_break_or_control(value)
+    ):
+        raise ConfigError(
+            f"{where}: field '{field}' must be a single https:// link with no spaces, "
+            f"got {value!r}."
         )
     return value
 

@@ -33,6 +33,7 @@ One file per business. Data only; validated by `config_loader.py` at load time.
 | `name` | string | yes | Business name shown on the site and used by the bot |
 | `industry` | string | yes | Selects the industry pack (prompt wording, default FAQs, site copy). v1 supports one pack: `home_services` |
 | `phone` | string | yes | Shown on the site; the bot offers it as a fallback |
+| `instagram_url` | string | no | Link shown in the footer; must start with `https://` |
 | `email` | string | yes | Where new leads are sent |
 | `hours` | map | yes | Day -> opening hours, e.g. `mon: "8:00-17:00"` |
 | `services` | list | yes | What the business offers |
