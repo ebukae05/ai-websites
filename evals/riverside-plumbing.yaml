@@ -43,5 +43,5 @@
   note: availability is unknown; offer the phone number or take details, never promise a time
 
 - question: Are you going to mess up my house as I leave?
-  must_include_any: ["555-0142", "guarantee", "guaranteed"]
-  note: tidiness isn't in the facts; it must not invent a cleanup policy
+  must_include: ["clean"]
+  note: answered by the home_services pack's default FAQ "Do you clean up after the job?"

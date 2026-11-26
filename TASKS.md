@@ -20,4 +20,4 @@
 - [x] Build template.html, styles.css, chat.js
 - [x] Implement build.py
 - [x] [CHECK] Human opens the demo page and tries the chat bot
-- [ ] Write evals for riverside-plumbing
+- [x] Write evals for riverside-plumbing
