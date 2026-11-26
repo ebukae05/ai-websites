@@ -14,11 +14,11 @@ prompt_rules:
 default_faqs:
   - question: Do you give free quotes?
     answer: >-
-      We are happy to discuss your job. Leave your name and phone number or email and we
+      We are happy to discuss your job. Use the Leave your details form or call us, and we
       will get back to you about a quote.
   - question: How soon can someone come out?
     answer: >-
-      It depends on the day's bookings. Leave your details or call us and we will give you
+      It depends on the day's bookings. Use the Leave your details form or call us and we will give you
       the earliest available time.
   - question: Do you clean up after the job?
     answer: >-
