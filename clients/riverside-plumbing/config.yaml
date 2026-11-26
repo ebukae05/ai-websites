@@ -1,8 +1,42 @@
 # Data, not code: everything the site and bot need to know about this business.
+# SAMPLE data for a fictional business. Phone and email are deliberately fake.
 name: Riverside Plumbing
 industry: home_services
-phone: ""
-email: ""
-hours: {}
-services: []
-faqs: []
+phone: "555-0142"
+instagram_url: https://instagram.com/riversideplumbing
+email: "owner@riverside-plumbing.example"
+hours:
+  mon: "7:30-17:30"
+  tue: "7:30-17:30"
+  wed: "7:30-17:30"
+  thu: "7:30-17:30"
+  fri: "7:30-16:00"
+  sat: "9:00-13:00"
+  sun: closed
+services:
+  - Leak detection and repair
+  - Blocked drain clearing
+  - Water heater installation and servicing
+  - Toilet, tap and shower repairs
+  - Burst pipe and emergency call-outs
+  - Bathroom and kitchen re-piping
+faqs:
+  - question: Do you charge a call-out fee?
+    answer: >-
+      Yes. Our call-out fee is $85 during business hours, which covers the first
+      30 minutes on site. We always give you a quote before starting any further work.
+  - question: Which areas do you serve?
+    answer: >-
+      We cover Riverside and suburbs within about 25 km, including Northbank, Millbrook
+      and Elm Park. Call us if you are unsure whether we reach you.
+  - question: Do you handle emergencies after hours?
+    answer: >-
+      Yes, we take emergency calls for burst pipes, major leaks and no hot water outside
+      normal hours. An after-hours call-out fee applies; call 555-0142 and follow the prompt.
+  - question: Are your plumbers licensed and insured?
+    answer: >-
+      Yes. Every plumber on our team is fully licensed, and the business carries public
+      liability insurance.
+  - question: Do you guarantee your work?
+    answer: >-
+      All workmanship is guaranteed for 12 months. Parts carry the manufacturer's warranty.

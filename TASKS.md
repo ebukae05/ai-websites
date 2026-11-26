@@ -12,11 +12,12 @@
 
 ## Phase 1: Build
 
-- [ ] Fill in riverside-plumbing config.yaml
-- [ ] Implement config_loader.py
-- [ ] Implement prompt.py and llm.py
-- [ ] Implement /chat, /lead, /health in main.py
-- [ ] Implement leads.py
-- [ ] Build template.html, styles.css, chat.js
-- [ ] Implement build.py
-- [ ] Write evals for riverside-plumbing
+- [x] Fill in riverside-plumbing config.yaml
+- [x] Implement config_loader.py
+- [x] Implement prompt.py and llm.py
+- [x] Implement /chat, /lead, /health in main.py
+- [x] Implement leads.py
+- [x] Build template.html, styles.css, chat.js
+- [x] Implement build.py
+- [x] [CHECK] Human opens the demo page and tries the chat bot
+- [x] Write evals for riverside-plumbing

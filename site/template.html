@@ -1,13 +1,81 @@
 <!doctype html>
-<!-- The one-page website layout. build.py fills in {{placeholders}} from a client's config.yaml. -->
+<!-- The one-page website layout. build.py fills in the double-brace tokens from a client's config.yaml
+     and its industry pack. Keep all wording here generic: business and industry text comes
+     from the config and the pack. -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{name}}</title>
+  <meta name="description" content="{{tagline}}">
+  <meta name="color-scheme" content="light dark">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body data-client="{{slug}}" data-api="{{api_url}}" data-phone="{{phone}}" data-name="{{name}}">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="hero">
+    <div class="container">
+      <h1 class="hero-title">{{name}}</h1>
+      <p class="hero-tagline">{{tagline}}</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="tel:{{phone_href}}">Call {{phone}}</a>
+        <button type="button" class="btn btn-secondary" data-open-chat="lead">{{cta}}</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="section" id="services" aria-labelledby="services-heading">
+      <div class="container">
+        <h2 id="services-heading">{{services_heading}}</h2>
+        <ul class="services">
+{{services_list}}
+        </ul>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="hours" aria-labelledby="hours-heading">
+      <div class="container">
+        <h2 id="hours-heading">Opening hours</h2>
+        <table class="hours">
+          <caption class="visually-hidden">Opening hours by day</caption>
+          <tbody>
+{{hours_rows}}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section" id="faq" aria-labelledby="faq-heading" {{faq_hidden}}>
+      <div class="container">
+        <h2 id="faq-heading">Frequently asked questions</h2>
+        <div class="faqs">
+{{faq_items}}
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="contact" aria-labelledby="contact-heading">
+      <div class="container contact">
+        <h2 id="contact-heading">Contact</h2>
+        <p>Call us on <a href="tel:{{phone_href}}">{{phone}}</a>, or leave your details and we
+          will get back to you.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="tel:{{phone_href}}">Call {{phone}}</a>
+          <button type="button" class="btn btn-secondary" data-open-chat="lead">{{cta}}</button>
+          <button type="button" class="btn btn-ghost" data-open-chat="chat">Ask a question</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>&copy; {{year}} {{name}} &middot; <a href="tel:{{phone_href}}">{{phone}}</a>{{instagram_link}}</p>
+    </div>
+  </footer>
+
   <script src="chat.js"></script>
 </body>
 </html>
